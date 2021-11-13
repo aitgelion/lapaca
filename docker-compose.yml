@@ -1,0 +1,10 @@
+version: '3.7'
+services:
+  lapaca:
+    container_name: lapaca
+    image: ghcr.io/aitgelion/lapaca:main
+    environment:
+      # WARNING: Change this key!!!
+      hmacKey: "GuPrRON7FlSloWkUy1oDfQ=="
+    ports:
+    - 80:80
