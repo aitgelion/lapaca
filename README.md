@@ -9,13 +9,15 @@ You can use an online generator like [this one](https://generate.plus/en/base64)
 ## Vanilla Docker
 ```
 docker run -d -p 80:80 -e hmacKey={YOUR_REALLY_RANDOM_KEY} ghcr.io/aitgelion/lapaca:main
-´´´
+```
 
 ## Using docker-compose
 ```
 docker-compose up -d
 ```
+
 Sample docker-compose:
+
 ```
 version: '3.7'
 services:
