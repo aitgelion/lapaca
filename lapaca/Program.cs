@@ -1,8 +1,3 @@
-using Microsoft.Extensions.Options;
-using System.Buffers.Text;
-using System.Collections;
-using System.Dynamic;
-using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -31,22 +26,25 @@ app.MapPost("/wh/{b64Signature}/{b64url}/{b64scheme}", async (string b64Signatur
     JsonDocument payload, IHttpClientFactory httpClientFactory) =>
 {
     // Check signature
-    var signature = Convert.FromBase64String(b64Signature);
+    var signature = SafeUrlBase64DecodeData(b64Signature);
     var hmac = GetHmac(app.Configuration["hmacKey"], b64url, b64scheme);
     if (!signature.SequenceEqual(hmac))
     {
         return Results.Unauthorized();
     }
 
-    var url = Encoding.UTF8.GetString(Convert.FromBase64String(b64url));
-    var scheme = Encoding.UTF8.GetString(Convert.FromBase64String(b64scheme));
+    var url = SafeUrlBase64Decode(b64url);
+    var scheme = SafeUrlBase64Decode(b64scheme);
 
     // Replace
-    Regex regex = new Regex(@"\$\{\{(.*?)\}\}");
+    Regex regex = new Regex(@"\$\{\{(.*?(?:\\\})*?)\}\}");
+    // \$\{\{(.*?(?:\})*)\}\} matchea bien pero en bloque
     var replacements = regex.Matches(scheme).Reverse();
     foreach (Match replacement in replacements)
     {
-        var value = GetValue(payload, replacement.Groups[1].Value);
+        var components = replacement.Groups[1].Value.Split("??", 2);
+
+        var value = GetValue(payload, components[0]) ?? (components.Length == 2 ? components[1].Replace("\\{","{").Replace("\\}","}"): @"null");
         scheme = scheme.Replace(replacement.Groups[0].Value, value);
     }
 
@@ -58,7 +56,7 @@ app.MapPost("/wh/{b64Signature}/{b64url}/{b64scheme}", async (string b64Signatur
         return Results.Problem();
     }
 
-    return Results.Stream(await post.Content.ReadAsStreamAsync());
+    return Results.Stream(await post.Content.ReadAsStreamAsync(), "application/json");
 
     //return Results.Ok();
 }).WithName("webhook");
@@ -66,16 +64,16 @@ app.MapPost("/wh/{b64Signature}/{b64url}/{b64scheme}", async (string b64Signatur
 app.MapPost("/api/wh", async (CreateUrlDto createUrlDto) =>
 {
     // Data
-    var url = Convert.ToBase64String(Encoding.UTF8.GetBytes(createUrlDto.url));
-    var scheme = Convert.ToBase64String(Encoding.UTF8.GetBytes(createUrlDto.scheme));
+    var url = SafeUrlBase64Encode(createUrlDto.url);
+    var scheme = SafeUrlBase64Encode(createUrlDto.scheme);
 
     // Generate signature
-    var hmac = GetHmac(app.Configuration["hmacKey"], url, scheme);
-    var signature = Convert.ToBase64String(hmac);
+    var hmac = GetHmac(createUrlDto.hmacKey, url, scheme);
+    var signature = SafeUrlBase64EncodeData(hmac);
 
     var finalUrl = $"/wh/{signature}/{url}/{scheme}";
     return Results.Ok(finalUrl);
-}).WithName("create");
+}).WithName("createWebHook");
 
 
 app.Run();
@@ -92,15 +90,26 @@ string? GetValue(JsonDocument json, string path)
     {
         if(!element.TryGetProperty(segment, out element))
         {
-            // return String.Empty;
-            return @"null";
+            return null;
         }
     }
     return element.GetRawText();
 }
 
+string SafeUrlBase64EncodeData(byte[] data)
+  => Convert.ToBase64String(data).Replace("+", "-").Replace("/", "_");
+
+string SafeUrlBase64Encode(string str)
+  => SafeUrlBase64EncodeData(Encoding.UTF8.GetBytes(str));
+
+byte[] SafeUrlBase64DecodeData(string str)
+  => Convert.FromBase64String(str.Replace("-", "+").Replace("_", "/"));
+
+string SafeUrlBase64Decode(string str)
+  => Encoding.UTF8.GetString(SafeUrlBase64DecodeData(str));
+
 byte[] GetHmac(string hmacKey, string b64Url, string b64Scheme)
-    => HMACSHA256.HashData(Encoding.UTF8.GetBytes(hmacKey), Encoding.UTF8.GetBytes(b64Url + b64Scheme));
+    => HMACSHA256.HashData(SafeUrlBase64DecodeData(hmacKey), Encoding.UTF8.GetBytes(b64Url + b64Scheme));
 
 public record CreateUrlDto(string hmacKey, string url, string scheme);
 
