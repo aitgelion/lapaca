@@ -27,6 +27,7 @@ services:
     environment:
       # WARNING: Change this key!!!
       hmacKey: "GuPrRON7FlSloWkUy1oDfQ=="
+      enableOpenApi: "true"
     ports:
     - 80:80
 ```
