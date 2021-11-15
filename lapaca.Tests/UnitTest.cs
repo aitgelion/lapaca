@@ -6,8 +6,9 @@ namespace lapaca.Tests
 {
     public class UnitTest
     {
-        [Fact]
-        public async Task CheckSignature()
+        [InlineData("wh")]
+        [InlineData("whex")]
+        public async Task CheckSignature(string segment)
         {
             await using var application = new LapacaApplicationFixture();
             var client = application.CreateClient();
@@ -15,15 +16,17 @@ namespace lapaca.Tests
             var url = "http://url.com/tokengrandote";
             var scheme = "{\"title\": ${{obj.title}}}";
 
-            var response = await client.PostAsJsonAsync("/api/wh", new WebHookConfig("m8f6uFJ95yHRvyVDjYESPw==", url, scheme));
+            var response = await client.PostAsJsonAsync($"/api/{segment}", new WebHookConfig("m8f6uFJ95yHRvyVDjYESPw==", url, scheme));
             var finalUrl = await response.Content.ReadFromJsonAsync<string>();
 
             var webHookResult = await client.PostAsJsonAsync(finalUrl, new { obj = new { title = "lapaca" } });
             Assert.False(webHookResult.IsSuccessStatusCode);
         }
 
-        [Fact]
-        public async Task CreateWebHook()
+        [Theory]
+        [InlineData("wh")]
+        [InlineData("whex")]
+        public async Task CreateWebHook(string segment)
         {
             await using var application = new LapacaApplicationFixture();
             var client = application.CreateClient();
@@ -31,7 +34,7 @@ namespace lapaca.Tests
             var url = "http://url.com/tokengrandote";
             var scheme = "{\"title\": ${{obj.title}}}";
 
-            var response = await client.PostAsJsonAsync("/api/wh", new WebHookConfig("GuPrRON7FlSloWkUy1oDfQ==", url, scheme));
+            var response = await client.PostAsJsonAsync($"/api/{segment}", new WebHookConfig("GuPrRON7FlSloWkUy1oDfQ==", url, scheme));
             var finalUrl = await response.Content.ReadFromJsonAsync<string>();
 
             var webHookResult = await client.PostAsJsonAsync(finalUrl, new { obj = new { title = "lapaca" } });
@@ -40,8 +43,10 @@ namespace lapaca.Tests
             Assert.Equal("{\"title\": \"lapaca\"}", webHookContent);
         }
 
-        [Fact]
-        public async Task CreateWebHookDefaultNumberValue()
+        [Theory]
+        [InlineData("wh")]
+        [InlineData("whex")]
+        public async Task CreateWebHookDefaultNumberValue(string segment)
         {
             await using var application = new LapacaApplicationFixture();
             var client = application.CreateClient();
@@ -49,7 +54,7 @@ namespace lapaca.Tests
             var url = "http://url.com/tokengrandote";
             var scheme = "{\"title\": ${{obj.title??12}}}";
 
-            var response = await client.PostAsJsonAsync("/api/wh", new WebHookConfig("GuPrRON7FlSloWkUy1oDfQ==", url, scheme));
+            var response = await client.PostAsJsonAsync($"/api/{segment}", new WebHookConfig("GuPrRON7FlSloWkUy1oDfQ==", url, scheme));
             var finalUrl = await response.Content.ReadFromJsonAsync<string>();
 
             var webHookResult = await client.PostAsJsonAsync(finalUrl, new { obj = new { subTitle = "lapaca" } });
@@ -58,8 +63,10 @@ namespace lapaca.Tests
             Assert.Equal("{\"title\": 12}", webHookContent);
         }
 
-        [Fact]
-        public async Task CreateWebHookDefaultStringValue()
+        [Theory]
+        [InlineData("wh")]
+        [InlineData("whex")]
+        public async Task CreateWebHookDefaultStringValue(string segment)
         {
             await using var application = new LapacaApplicationFixture();
             var client = application.CreateClient();
@@ -67,7 +74,7 @@ namespace lapaca.Tests
             var url = "http://url.com/tokengrandote";
             var scheme = "{\"title\": ${{obj.title??\"No title!\"}}}";
 
-            var response = await client.PostAsJsonAsync("/api/wh", new WebHookConfig("GuPrRON7FlSloWkUy1oDfQ==", url, scheme));
+            var response = await client.PostAsJsonAsync($"/api/{segment}", new WebHookConfig("GuPrRON7FlSloWkUy1oDfQ==", url, scheme));
             var finalUrl = await response.Content.ReadFromJsonAsync<string>();
 
             var webHookResult = await client.PostAsJsonAsync(finalUrl, new { obj = new { subTitle = "lapaca" } });
@@ -76,8 +83,10 @@ namespace lapaca.Tests
             Assert.Equal("{\"title\": \"No title!\"}", webHookContent);
         }
 
-        [Fact]
-        public async Task CreateWebHookDefaultJsonValue()
+        [Theory]
+        [InlineData("wh")]
+        [InlineData("whex")]
+        public async Task CreateWebHookDefaultJsonValue(string segment)
         {
             await using var application = new LapacaApplicationFixture();
             var client = application.CreateClient();
@@ -85,7 +94,7 @@ namespace lapaca.Tests
             var url = "http://url.com/tokengrandote";
             var scheme = "{\"title\": ${{obj.title??\\{\"name\": \"title\"\\}}}}";
 
-            var response = await client.PostAsJsonAsync("/api/wh", new WebHookConfig("GuPrRON7FlSloWkUy1oDfQ==", url, scheme));
+            var response = await client.PostAsJsonAsync($"/api/{segment}", new WebHookConfig("GuPrRON7FlSloWkUy1oDfQ==", url, scheme));
             var finalUrl = await response.Content.ReadFromJsonAsync<string>();
 
             var webHookResult = await client.PostAsJsonAsync(finalUrl, new { obj = new { subTitle = "lapaca" } });
