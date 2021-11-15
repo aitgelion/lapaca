@@ -132,9 +132,16 @@ string? GetValue(JsonDocument json, string path)
 
         if (isArrayElement.Success)
         {
-            if (int.TryParse(isArrayElement.Groups[2].Value, out var i))
+            if (element.ValueKind == JsonValueKind.Array && int.TryParse(isArrayElement.Groups[2].Value, out var i))
             {
-                element = element.EnumerateArray().ElementAt(i);
+                try
+                {
+                    element = element.EnumerateArray().ElementAt(i);
+                }
+                catch
+                {
+                    return null;
+                }
             }
             else
             {
