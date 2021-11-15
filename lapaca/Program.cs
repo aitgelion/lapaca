@@ -28,7 +28,7 @@ if (app.Environment.IsDevelopment() || app.Configuration["enableOpenApi"]?.ToLow
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 
 app.MapPost("/wh/{b64Signature}/{b64Conf}", async (string b64Signature, string b64Conf,
     JsonDocument payload, IHttpClientFactory httpClientFactory) =>
