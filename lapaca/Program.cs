@@ -116,14 +116,30 @@ app.Run();
 /// </summary>
 string? GetValue(JsonDocument json, string path)
 {
+    var arrayElement = new Regex("(.*?)\\[(\\d+)\\]");
+
     var element = json.RootElement;
 
-    var pathSegments = path.Split('.');
+    var pathSegments = path.Split('.', StringSplitOptions.RemoveEmptyEntries);
     foreach (var segment in pathSegments)
     {
-        if(!element.TryGetProperty(segment, out element))
+        var isArrayElement = arrayElement.Match(segment);
+
+        if (!element.TryGetProperty(isArrayElement.Success ? isArrayElement.Groups[1].Value : segment, out element))
         {
             return null;
+        }
+
+        if (isArrayElement.Success)
+        {
+            if (int.TryParse(isArrayElement.Groups[2].Value, out var i))
+            {
+                element = element.EnumerateArray().ElementAt(i);
+            }
+            else
+            {
+                return null;
+            }
         }
     }
     return element.GetRawText();
