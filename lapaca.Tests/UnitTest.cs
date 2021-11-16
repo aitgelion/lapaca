@@ -141,6 +141,26 @@ namespace lapaca.Tests
 
             Assert.Equal("{\"title\": {\"name\": \"title\"}}", webHookContent);
         }
+        
+        [Theory]
+        [InlineData("wh")]
+        [InlineData("whex")]
+        public async Task CreateWebHookDOtsInPropName(string segment)
+        {
+            await using var application = new LapacaApplicationFixture();
+            var client = application.CreateClient();
+
+            var url = "http://url.com/tokengrandote";
+            var scheme = "{\"title\": \"${{root.obj\\.name.title}}\"}";
+
+            var response = await client.PostAsJsonAsync($"/api/{segment}", new WebHookConfig("GuPrRON7FlSloWkUy1oDfQ==", url, scheme));
+            var finalUrl = await response.Content.ReadFromJsonAsync<string>();
+
+            var webHookResult = await client.PostAsync(finalUrl, new System.Net.Http.StringContent("{\"root\":{\"obj.name\":{\"title\":\"lapaca\"}}}", System.Text.Encoding.UTF8, "application/json"));
+            var webHookContent = await webHookResult.Content.ReadAsStringAsync();
+
+            Assert.Equal("{\"title\": \"lapaca\"}", webHookContent);
+        }
 
         [Theory]
         [InlineData("wh")]
