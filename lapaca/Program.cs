@@ -41,6 +41,12 @@ app.MapPost("/wh/{b64Signature}/{b64Conf}", async (HttpRequest request, string b
         return Results.Unauthorized();
     }
 
+    if (request.Query.TryGetValue("logPayload", out var _))
+    {
+        app.Logger.LogInformation(JsonSerializer.Serialize(payload));
+    }
+    var logSentPayload = request.Query.TryGetValue("logSentPayload", out var _);
+
     // Get WebHook Configuration
     WebHookConfig? config;
     using (var deflated = new MemoryStream(b64Conf.Length))
@@ -52,7 +58,7 @@ app.MapPost("/wh/{b64Signature}/{b64Conf}", async (HttpRequest request, string b
         config = ProtoBuf.Serializer.Deserialize<WebHookConfig>(deflated);
     }
 
-    return await ProcessWebHook(request.Headers, httpClientFactory, config, payload);
+    return await ProcessWebHook(request.Headers, httpClientFactory, config, payload, logSentPayload);
 }).WithName("WebHookExCompressed");
 
 app.MapPost("/wh/{b64Signature}/{b64url}/{b64scheme}", async (HttpRequest request, string b64Signature, string b64url, string b64scheme,
@@ -66,12 +72,18 @@ app.MapPost("/wh/{b64Signature}/{b64url}/{b64scheme}", async (HttpRequest reques
         return Results.Unauthorized();
     }
 
+    if (request.Query.TryGetValue("logPayload", out var _))
+    {
+        app.Logger.LogInformation(JsonSerializer.Serialize(payload));
+    }
+    var logSentPayload = request.Query.TryGetValue("logSentPayload", out var _);
+
     var url = SafeUrlBase64Decode(b64url);
     var scheme = SafeUrlBase64Decode(b64scheme);
     
     WebHookConfig config = new WebHookConfig("", url, scheme);
 
-    return await ProcessWebHook(request.Headers, httpClientFactory, config, payload);
+    return await ProcessWebHook(request.Headers, httpClientFactory, config, payload, logSentPayload);
 }).WithName("webhook");
 
 // API
@@ -118,12 +130,13 @@ string? GetValue(JsonDocument json, string path)
 {
     var arrayElement = new Regex("(.*?)\\[(\\d+)\\]");
 
+
     var element = json.RootElement;
 
     //var pathSegments = path.Split('.', StringSplitOptions.RemoveEmptyEntries);
     var separator = new Regex("(?<!\\\\)\\.");
     var pathSegments = separator.Split(path).Select(s => s.Replace("\\.", "."));
-    
+
     foreach (var segment in pathSegments)
     {
         var isArrayElement = arrayElement.Match(segment);
@@ -155,7 +168,7 @@ string? GetValue(JsonDocument json, string path)
     return element.GetRawText();
 }
 
-async Task<IResult> ProcessWebHook(IHeaderDictionary requestHeaders, IHttpClientFactory httpClientFactory, WebHookConfig config, JsonDocument payload)
+async Task<IResult> ProcessWebHook(IHeaderDictionary requestHeaders, IHttpClientFactory httpClientFactory, WebHookConfig config, JsonDocument payload, bool logPayload = false)
 {
     // Replace
     string finalPayload = config.Scheme;
@@ -168,6 +181,13 @@ async Task<IResult> ProcessWebHook(IHeaderDictionary requestHeaders, IHttpClient
         var value = GetValue(payload, components[0]) ?? (components.Length == 2 ? components[1].Replace("\\{", "{").Replace("\\}", "}") : @"null");
         finalPayload = finalPayload.Replace(replacement.Groups[0].Value, value.TrimStart('"').TrimEnd('"'));
     }
+
+
+    if (logPayload)
+    {
+        app.Logger.LogInformation(finalPayload);
+    }
+
 
     // Call the final endpoint
     var httpClient = config.SkipCertVerification ?
