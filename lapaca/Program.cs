@@ -120,7 +120,10 @@ string? GetValue(JsonDocument json, string path)
 
     var element = json.RootElement;
 
-    var pathSegments = path.Split('.', StringSplitOptions.RemoveEmptyEntries);
+    //var pathSegments = path.Split('.', StringSplitOptions.RemoveEmptyEntries);
+    var separator = new Regex("(?<!\\\\)\\.");
+    var pathSegments = separator.Split(path).Select(s => s.Replace("\\.", "."));
+    
     foreach (var segment in pathSegments)
     {
         var isArrayElement = arrayElement.Match(segment);
