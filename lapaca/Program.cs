@@ -163,7 +163,7 @@ async Task<IResult> ProcessWebHook(IHeaderDictionary requestHeaders, IHttpClient
         var components = replacement.Groups[1].Value.Split("??", 2);
 
         var value = GetValue(payload, components[0]) ?? (components.Length == 2 ? components[1].Replace("\\{", "{").Replace("\\}", "}") : @"null");
-        finalPayload = finalPayload.Replace(replacement.Groups[0].Value, value);
+        finalPayload = finalPayload.Replace(replacement.Groups[0].Value, value.TrimStart('"').TrimEnd('"'));
     }
 
     // Call the final endpoint

@@ -34,7 +34,7 @@ namespace lapaca.Tests
             client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "TOKEN");
 
             var url = "http://url.com/tokengrandote";
-            var scheme = "{\"title\": ${{obj.title}}}";
+            var scheme = "{\"title\": \"${{obj.title}}\"}";
 
             var response = await client.PostAsJsonAsync($"/api/{segment}", new WebHookConfig("GuPrRON7FlSloWkUy1oDfQ==", url, scheme));
             var finalUrl = await response.Content.ReadFromJsonAsync<string>();
@@ -53,7 +53,7 @@ namespace lapaca.Tests
             client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer");
 
             var url = "http://url.com/tokengrandote";
-            var scheme = "{\"title\": ${{obj.title}}}";
+            var scheme = "{\"title\": \"${{obj.title}}\"}";
 
             var response = await client.PostAsJsonAsync($"/api/{segment}", new WebHookConfig("GuPrRON7FlSloWkUy1oDfQ==", url, scheme));
             var finalUrl = await response.Content.ReadFromJsonAsync<string>();
@@ -71,7 +71,7 @@ namespace lapaca.Tests
             var client = application.CreateClient();
 
             var url = "http://url.com/tokengrandote";
-            var scheme = "{\"title\": ${{obj.title}}}";
+            var scheme = "{\"title\": \"${{obj.title}}\"}";
 
             var response = await client.PostAsJsonAsync($"/api/{segment}", new WebHookConfig("GuPrRON7FlSloWkUy1oDfQ==", url, scheme));
             var finalUrl = await response.Content.ReadFromJsonAsync<string>();
@@ -111,7 +111,7 @@ namespace lapaca.Tests
             var client = application.CreateClient();
 
             var url = "http://url.com/tokengrandote";
-            var scheme = "{\"title\": ${{obj.title??\"No title!\"}}}";
+            var scheme = "{\"title\": \"${{obj.title??\"No title!\"}}\"}";
 
             var response = await client.PostAsJsonAsync($"/api/{segment}", new WebHookConfig("GuPrRON7FlSloWkUy1oDfQ==", url, scheme));
             var finalUrl = await response.Content.ReadFromJsonAsync<string>();
@@ -151,7 +151,7 @@ namespace lapaca.Tests
             var client = application.CreateClient();
 
             var url = "http://url.com/tokengrandote";
-            var scheme = "{\"title\": ${{obj.el[0].title??\"Unknown\"}}}";
+            var scheme = "{\"title\": \"${{obj.el[0].title??\"Unknown\"}}\"}";
 
             var response = await client.PostAsJsonAsync($"/api/{segment}", new WebHookConfig("GuPrRON7FlSloWkUy1oDfQ==", url, scheme));
             var finalUrl = await response.Content.ReadFromJsonAsync<string>();
@@ -171,7 +171,7 @@ namespace lapaca.Tests
             var client = application.CreateClient();
 
             var url = "http://url.com/tokengrandote";
-            var scheme = "{\"title\": ${{obj.el[1].title??\"Unknown\"}}}";
+            var scheme = "{\"title\": \"${{obj.el[1].title??\"Unknown\"}}\"}";
 
             var response = await client.PostAsJsonAsync($"/api/{segment}", new WebHookConfig("GuPrRON7FlSloWkUy1oDfQ==", url, scheme));
             var finalUrl = await response.Content.ReadFromJsonAsync<string>();
