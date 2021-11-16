@@ -30,7 +30,7 @@ if (app.Environment.IsDevelopment() || app.Configuration["enableOpenApi"]?.ToLow
 
 // app.UseHttpsRedirection();
 
-app.MapPost("/wh/{b64Signature}/{b64Conf}", async (string b64Signature, string b64Conf,
+app.MapPost("/wh/{b64Signature}/{b64Conf}", async (HttpRequest request, string b64Signature, string b64Conf,
     JsonDocument payload, IHttpClientFactory httpClientFactory) =>
 {
     // Check signature
@@ -52,10 +52,10 @@ app.MapPost("/wh/{b64Signature}/{b64Conf}", async (string b64Signature, string b
         config = ProtoBuf.Serializer.Deserialize<WebHookConfig>(deflated);
     }
 
-    return await ProcessWebHook(httpClientFactory, config, payload);
+    return await ProcessWebHook(request.Headers, httpClientFactory, config, payload);
 }).WithName("WebHookExCompressed");
 
-app.MapPost("/wh/{b64Signature}/{b64url}/{b64scheme}", async (string b64Signature, string b64url, string b64scheme,
+app.MapPost("/wh/{b64Signature}/{b64url}/{b64scheme}", async (HttpRequest request, string b64Signature, string b64url, string b64scheme,
     JsonDocument payload, IHttpClientFactory httpClientFactory) =>
 {
     // Check signature
@@ -71,7 +71,7 @@ app.MapPost("/wh/{b64Signature}/{b64url}/{b64scheme}", async (string b64Signatur
     
     WebHookConfig config = new WebHookConfig("", url, scheme);
 
-    return await ProcessWebHook(httpClientFactory, config, payload);
+    return await ProcessWebHook(request.Headers, httpClientFactory, config, payload);
 }).WithName("webhook");
 
 // API
@@ -152,7 +152,7 @@ string? GetValue(JsonDocument json, string path)
     return element.GetRawText();
 }
 
-async Task<IResult> ProcessWebHook(IHttpClientFactory httpClientFactory, WebHookConfig config, JsonDocument payload)
+async Task<IResult> ProcessWebHook(IHeaderDictionary requestHeaders, IHttpClientFactory httpClientFactory, WebHookConfig config, JsonDocument payload)
 {
     // Replace
     string finalPayload = config.Scheme;
@@ -170,6 +170,12 @@ async Task<IResult> ProcessWebHook(IHttpClientFactory httpClientFactory, WebHook
     var httpClient = config.SkipCertVerification ?
         httpClientFactory.CreateClient("NoCert") :
         httpClientFactory.CreateClient();
+
+    var authHeader = requestHeaders.Authorization.FirstOrDefault()?.Split(' ', 2);
+    if (authHeader?.Length > 0)
+    {
+        httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(authHeader[0], authHeader.Length > 1 ? authHeader[1] : null);
+    }
 
     var post = await httpClient.PostAsync(config.Url, new StringContent(finalPayload, Encoding.UTF8, "application/json"));
     if (!post.IsSuccessStatusCode)
